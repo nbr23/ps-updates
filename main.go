@@ -185,15 +185,42 @@ func (updates psupdates) writeAsString(wr io.Writer, hardware string) error {
 }
 
 func main() {
-	var hardware = flag.String("hardware", "ps5", "Hardware to get the information for. Can be ps4 or ps5")
+	var hardware = flag.String("hardware", "ps5", "Hardware to get the information for. Can be \"ps4\" or \"ps5\"")
+	var dbfilepath = flag.String("db", "", "Path to the sqlite3 database to store the versions into")
+	var outputformat = flag.String("format", "text", "Output formatter. Can be \"text\" for plaintext, \"rss\" for an RSS XML")
+	var updates psupdates
 
 	flag.Parse()
 
-	update, err := getLatestRelease(strings.ToLower(*hardware))
+	if strings.Compare(strings.ToLower(*hardware), "ps4") != 0 && strings.Compare(strings.ToLower(*hardware), "ps5") != 0 {
+		panic("Only \"ps4\" and \"ps5\" are supported hardwares at this time")
+	}
 
+	update, err := getLatestRelease(strings.ToLower(*hardware))
 	if err != nil {
 		panic(err)
 	}
+	updates = psupdates{update}
 
-	fmt.Println(publishdate, latestversion)
+	if len(*dbfilepath) > 0 {
+		err = writeToDB(*dbfilepath, *hardware, update)
+		if err != nil {
+			panic(err)
+		}
+
+		updates, err = readUpdatesFromDB(*dbfilepath, *hardware)
+
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	switch strings.ToLower(*outputformat) {
+	case "text":
+		updates.writeAsString(os.Stdout, *hardware)
+	case "rss":
+		updates.writeAsRSS(os.Stdout, *hardware)
+	default:
+		panic(fmt.Errorf("unsupported output format %s", *outputformat))
+	}
 }
