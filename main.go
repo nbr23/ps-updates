@@ -24,6 +24,7 @@ type psupdate struct {
 	ReleaseTimeStamp int64
 	VersionName      string
 }
+type psupdates []psupdate
 
 func parseLatestVersion(doc goquery.Document) (string, error) {
 	var latestversion string
@@ -158,7 +159,7 @@ func writeToDB(dbpath string, hardware string, update psupdate) error {
 	return nil
 }
 
-func toRSS(hardware string, updates []psupdate, wr io.Writer) error {
+func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
 	atom, err := template.ParseFiles("templates/rss.goxml")
 
 	if err != nil {
@@ -173,6 +174,14 @@ func toRSS(hardware string, updates []psupdate, wr io.Writer) error {
 		Updates:  updates,
 	},
 	)
+}
+
+func (updates psupdates) writeAsString(wr io.Writer, hardware string) error {
+	fmt.Fprintf(wr, "%s Updates:\n", strings.ToUpper(hardware))
+	for _, update := range updates {
+		fmt.Fprintf(wr, "- %s: %s\n", update.ReleaseDate, update.VersionName)
+	}
+	return nil
 }
 
 func main() {
