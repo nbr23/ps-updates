@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"log"
@@ -153,6 +156,23 @@ func writeToDB(dbpath string, hardware string, update psupdate) error {
 	}
 
 	return nil
+}
+
+func toRSS(hardware string, updates []psupdate, wr io.Writer) error {
+	atom, err := template.ParseFiles("templates/rss.goxml")
+
+	if err != nil {
+		return err
+	}
+
+	return atom.Execute(wr, struct {
+		Hardware string
+		Updates  []psupdate
+	}{
+		Hardware: strings.ToUpper(hardware),
+		Updates:  updates,
+	},
+	)
 }
 
 func main() {
