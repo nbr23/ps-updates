@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type psupdate struct {
@@ -86,6 +88,45 @@ func getLatestRelease(hardware string) (psupdate, error) {
 	update.VersionName, err = parseLatestVersion(*doc)
 
 	return update, err
+}
+
+func writeToDB(dbpath string, hardware string, update psupdate) error {
+	db, err := sql.Open("sqlite3", dbpath)
+
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	_, err = db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (pubtimestamp INTEGER, pubdate TEXT, version TEXT);", hardware))
+	if err != nil {
+		return err
+	}
+
+	// Check if in table already
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT * FROM %s WHERE version = ?", hardware))
+	if err != nil {
+		return err
+	}
+	rows, err := stmt.Query(update.VersionName)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	if !rows.Next() {
+		stmt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s(pubtimestamp, pubdate, version) VALUES(?,?,?)", hardware))
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(update.ReleaseTimeStamp, update.ReleaseDate, update.VersionName)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func main() {
