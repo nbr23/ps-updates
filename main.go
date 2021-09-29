@@ -90,6 +90,32 @@ func getLatestRelease(hardware string) (psupdate, error) {
 	return update, err
 }
 
+func readUpdatesFromDB(dbpath string, hardware string) ([]psupdate, error) {
+	var updates []psupdate
+	db, err := sql.Open("sqlite3", dbpath)
+
+	if err != nil {
+		return updates, err
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare(fmt.Sprintf("SELECT pubtimestamp, pubdate, version FROM %s ORDER BY pubtimestamp DESC", hardware))
+	if err != nil {
+		return updates, err
+	}
+	rows, err := stmt.Query()
+	if err != nil {
+		return updates, err
+	}
+
+	for rows.Next() {
+		var update psupdate
+		rows.Scan(&update.ReleaseTimeStamp, &update.ReleaseDate, &update.VersionName)
+		updates = append(updates, update)
+	}
+	return updates, err
+}
+
 func writeToDB(dbpath string, hardware string, update psupdate) error {
 	db, err := sql.Open("sqlite3", dbpath)
 
