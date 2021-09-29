@@ -47,16 +47,13 @@ func parsePublishDate(doc goquery.Document) (int64, string, error) {
 		name, _ := s.Attr("name")
 		if name == "publish_date_timestamp" {
 			pubdate, _ := s.Attr("content")
-			publishtimestamp, err := strconv.ParseInt(pubdate, 10, 64)
+			publishtimestamp, err = strconv.ParseInt(pubdate, 10, 64)
 			if err == nil {
 				t := time.Unix(publishtimestamp, 0)
 				publishdate = t.Format(time.UnixDate)
 			}
 		}
 	})
-	if len(publishdate) == 0 {
-		err = fmt.Errorf("unable to parse the latest publication date in the page")
-	}
 	return publishtimestamp, publishdate, err
 }
 
