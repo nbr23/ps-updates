@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"log"
@@ -12,6 +13,12 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 )
+
+type psupdate struct {
+	ReleaseDate      string
+	ReleaseTimeStamp int64
+	VersionName      string
+}
 
 func parseLatestVersion(doc goquery.Document) (string, error) {
 	var latestversion string
@@ -21,7 +28,7 @@ func parseLatestVersion(doc goquery.Document) (string, error) {
 		// Assuming the first paragraph with version in the text is the latest version
 		matched, err := regexp.MatchString("[Vv]ersion", s.Text())
 		if err == nil && matched {
-			latestversion = s.Text()
+			latestversion = strings.TrimSpace(s.Text())
 		}
 	})
 	if len(latestversion) == 0 {
@@ -30,7 +37,8 @@ func parseLatestVersion(doc goquery.Document) (string, error) {
 	return latestversion, err
 }
 
-func parsePublishDate(doc goquery.Document) (string, error) {
+func parsePublishDate(doc goquery.Document) (int64, string, error) {
+	var publishtimestamp int64
 	var publishdate string
 	var err error
 
@@ -39,9 +47,9 @@ func parsePublishDate(doc goquery.Document) (string, error) {
 		name, _ := s.Attr("name")
 		if name == "publish_date_timestamp" {
 			pubdate, _ := s.Attr("content")
-			timestamp, err := strconv.ParseInt(pubdate, 10, 64)
+			publishtimestamp, err := strconv.ParseInt(pubdate, 10, 64)
 			if err == nil {
-				t := time.Unix(timestamp, 0)
+				t := time.Unix(publishtimestamp, 0)
 				publishdate = t.Format(time.UnixDate)
 			}
 		}
@@ -49,13 +57,12 @@ func parsePublishDate(doc goquery.Document) (string, error) {
 	if len(publishdate) == 0 {
 		err = fmt.Errorf("unable to parse the latest publication date in the page")
 	}
-	return publishdate, err
+	return publishtimestamp, publishdate, err
 }
 
-func getLatestRelease(hardware string) (string, string, error) {
+func getLatestRelease(hardware string) (psupdate, error) {
 	url := fmt.Sprintf("https://www.playstation.com/en-gb/support/hardware/%s/system-software/", hardware)
-	var latestversion string
-	var publishdate string
+	var update psupdate
 
 	resp, err := http.Get(url)
 
@@ -66,22 +73,22 @@ func getLatestRelease(hardware string) (string, string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return publishdate, latestversion, fmt.Errorf("unable to fetch the update page, status code: %d", resp.StatusCode)
+		return update, fmt.Errorf("unable to fetch the update page, status code: %d", resp.StatusCode)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return publishdate, latestversion, err
+		return update, err
 	}
 
-	publishdate, err = parsePublishDate(*doc)
+	update.ReleaseTimeStamp, update.ReleaseDate, err = parsePublishDate(*doc)
 	if err != nil {
-		return publishdate, latestversion, err
+		return update, err
 	}
 
-	latestversion, err = parseLatestVersion(*doc)
+	update.VersionName, err = parseLatestVersion(*doc)
 
-	return publishdate, latestversion, err
+	return update, err
 }
 
 func main() {
@@ -89,7 +96,7 @@ func main() {
 
 	flag.Parse()
 
-	publishdate, latestversion, err := getLatestRelease(*hardware)
+	update, err := getLatestRelease(strings.ToLower(*hardware))
 
 	if err != nil {
 		panic(err)
