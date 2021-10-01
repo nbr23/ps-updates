@@ -63,8 +63,12 @@ func parsePublishDate(doc goquery.Document) (int64, string, error) {
 	return publishtimestamp, publishdate, err
 }
 
+func getHardwareURL(hardware string) string {
+	return fmt.Sprintf("https://www.playstation.com/en-gb/support/hardware/%s/system-software/", strings.ToLower(hardware))
+}
+
 func getLatestRelease(hardware string) (psupdate, error) {
-	url := fmt.Sprintf("https://www.playstation.com/en-gb/support/hardware/%s/system-software/", hardware)
+	url := getHardwareURL(hardware)
 	var update psupdate
 
 	resp, err := http.Get(url)
@@ -162,6 +166,7 @@ func writeToDB(dbpath string, hardware string, update psupdate) error {
 func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
 	rss_tpl := `
 {{ $hardware := .Hardware }}
+{{ $link := .Link }}
 <rss version="2.0">
 	<channel>
 		<title>{{ $hardware }} Updates</title>
@@ -169,6 +174,7 @@ func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
 			<item>
 			<title>{{ $hardware }} Update: {{ .VersionName }}</title>
 			<pubDate>{{ .ReleaseDate }}</pubDate>
+			<link>{{ $link }}</link>
 			</item>
 		{{ end }}
 	</channel>
@@ -182,9 +188,11 @@ func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
 
 	return atom.Execute(wr, struct {
 		Hardware string
+		Link     string
 		Updates  []psupdate
 	}{
 		Hardware: strings.ToUpper(hardware),
+		Link:     getHardwareURL(hardware),
 		Updates:  updates,
 	},
 	)
@@ -210,7 +218,7 @@ func main() {
 		panic("Only \"ps4\" and \"ps5\" are supported hardwares at this time")
 	}
 
-	update, err := getLatestRelease(strings.ToLower(*hardware))
+	update, err := getLatestRelease(*hardware)
 	if err != nil {
 		panic(err)
 	}
