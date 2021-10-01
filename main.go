@@ -160,7 +160,21 @@ func writeToDB(dbpath string, hardware string, update psupdate) error {
 }
 
 func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
-	atom, err := template.ParseFiles("templates/rss.goxml")
+	rss_tpl := `
+{{ $hardware := .Hardware }}
+<rss version="2.0">
+	<channel>
+		<title>{{ $hardware }} Updates</title>
+		{{ range .Updates }}
+			<item>
+			<title>{{ $hardware }} Update: {{ .VersionName }}</title>
+			<pubDate>{{ .ReleaseDate }}</pubDate>
+			</item>
+		{{ end }}
+	</channel>
+</rss>
+`
+	atom, err := template.New("rss").Parse(rss_tpl)
 
 	if err != nil {
 		return err
