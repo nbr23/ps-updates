@@ -7,6 +7,8 @@ Add the following feeds to your RSS Reader to be informed of the latest PS4 and 
 - [PS5 Updates RSS](https://ps.wip.tf/PS5.xml)
 - [PS4 Updates RSS](https://ps.wip.tf/PS4.xml)
 
+![RSS Feed][1]
+
 ## Requirements
 
 This can be built using golang, and leverages sqlite3 to store versions history
@@ -26,3 +28,5 @@ Usage of psupdates:
 To generate the rss feed formatted file for PS4 updates, add the following command in your scheduler (crontab, etc):
 
 `psupdates --format rss --hardware ps4 --db ~/.config/psupdates.db > $WWW_DIR/PS4_updates.xml`
+
+[1]:docs/rss_screen.png
