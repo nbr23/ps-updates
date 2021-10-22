@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -98,6 +99,10 @@ func getLatestRelease(hardware string) (psupdate, error) {
 	return update, err
 }
 
+func (update psupdate) Guid() string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprint(update.ReleaseDate, update.VersionName))))
+}
+
 func readUpdatesFromDB(dbpath string, hardware string) ([]psupdate, error) {
 	var updates []psupdate
 	db, err := sql.Open("sqlite3", dbpath)
@@ -173,6 +178,7 @@ func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
 		{{ range .Updates }}
 			<item>
 			<title>{{ $hardware }} Update: {{ .VersionName }}</title>
+			<guid>{{ .Guid }}</guid>
 			<pubDate>{{ .ReleaseDate }}</pubDate>
 			<link>{{ $link }}</link>
 			</item>
