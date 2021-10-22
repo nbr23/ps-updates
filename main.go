@@ -64,7 +64,7 @@ func parsePublishDate(doc goquery.Document) (int64, string, error) {
 }
 
 func getHardwareURL(hardware string) string {
-	return fmt.Sprintf("https://www.playstation.com/en-gb/support/hardware/%s/system-software/", strings.ToLower(hardware))
+	return fmt.Sprintf("https://www.playstation.com/en-us/support/hardware/%s/system-software/", strings.ToLower(hardware))
 }
 
 func getLatestRelease(hardware string) (psupdate, error) {
