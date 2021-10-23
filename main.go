@@ -175,13 +175,15 @@ func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
 <rss version="2.0">
 	<channel>
 		<title>{{ $hardware }} Updates</title>
+		<description>Feed of the {{ $hardware }} Software update releases</description>
 		{{ range .Updates }}
-			<item>
+		<item>
 			<title>{{ $hardware }} Update: {{ .VersionName }}</title>
 			<guid>{{ .Guid }}</guid>
+			<description>The {{ $hardware }} software update {{ .VersionName }} was released on {{ .ReleaseDate }}</description>
 			<pubDate>{{ .ReleaseDate }}</pubDate>
 			<link>{{ $link }}</link>
-			</item>
+		</item>
 		{{ end }}
 	</channel>
 </rss>
