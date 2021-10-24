@@ -23,6 +23,8 @@ Usage of psupdates:
         Output formatter. Can be "text" for plaintext, "rss" for an RSS XML (default "text")
   -hardware string
         Hardware to get the information for. Can be "ps4" or "ps5" (default "ps5")
+  -local string
+        Localisation of the PlayStation website to use to retrieve the updates. For best results, use an English based local: "en-XX" (default "en-us")
 ```
 
 To generate the rss feed formatted file for PS4 updates, add the following command in your scheduler (crontab, etc):

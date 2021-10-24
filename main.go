@@ -64,12 +64,12 @@ func parsePublishDate(doc goquery.Document) (int64, string, error) {
 	return publishtimestamp, publishdate, err
 }
 
-func getHardwareURL(hardware string) string {
-	return fmt.Sprintf("https://www.playstation.com/en-us/support/hardware/%s/system-software/", strings.ToLower(hardware))
+func getHardwareURL(hardware string, local string) string {
+	return fmt.Sprintf("https://www.playstation.com/%s/support/hardware/%s/system-software/", strings.ToLower(local), strings.ToLower(hardware))
 }
 
-func getLatestRelease(hardware string) (psupdate, error) {
-	url := getHardwareURL(hardware)
+func getLatestRelease(hardware string, local string) (psupdate, error) {
+	url := getHardwareURL(hardware, local)
 	var update psupdate
 
 	resp, err := http.Get(url)
@@ -168,7 +168,7 @@ func writeToDB(dbpath string, hardware string, update psupdate) error {
 	return nil
 }
 
-func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
+func (updates psupdates) writeAsRSS(wr io.Writer, hardware string, local string) error {
 	rss_tpl := `
 {{ $hardware := .Hardware }}
 {{ $link := .Link }}
@@ -200,7 +200,7 @@ func (updates psupdates) writeAsRSS(wr io.Writer, hardware string) error {
 		Updates  []psupdate
 	}{
 		Hardware: strings.ToUpper(hardware),
-		Link:     getHardwareURL(hardware),
+		Link:     getHardwareURL(hardware, local),
 		Updates:  updates,
 	},
 	)
@@ -218,6 +218,7 @@ func main() {
 	var hardware = flag.String("hardware", "ps5", "Hardware to get the information for. Can be \"ps4\" or \"ps5\"")
 	var dbfilepath = flag.String("db", "", "Path to the sqlite3 database to store the versions into")
 	var outputformat = flag.String("format", "text", "Output formatter. Can be \"text\" for plaintext, \"rss\" for an RSS XML")
+	var local = flag.String("local", "en-us", "Localisation of the PlayStation website to use to retrieve the updates. For best results, use an English based local: \"en-XX\"")
 	var updates psupdates
 
 	flag.Parse()
@@ -226,7 +227,7 @@ func main() {
 		panic("Only \"ps4\" and \"ps5\" are supported hardwares at this time")
 	}
 
-	update, err := getLatestRelease(*hardware)
+	update, err := getLatestRelease(*hardware, *local)
 	if err != nil {
 		panic(err)
 	}
@@ -249,7 +250,7 @@ func main() {
 	case "text":
 		updates.writeAsString(os.Stdout, *hardware)
 	case "rss":
-		updates.writeAsRSS(os.Stdout, *hardware)
+		updates.writeAsRSS(os.Stdout, *hardware, *local)
 	default:
 		panic(fmt.Errorf("unsupported output format %s", *outputformat))
 	}
