@@ -25,10 +25,12 @@ Usage of psupdates:
         Hardware to get the information for. Can be "ps4" or "ps5" (default "ps5")
   -local string
         Localisation of the PlayStation website to use to retrieve the updates. For best results, use an English based local: "en-XX" (default "en-us")
+  -output string
+        Output file path
 ```
 
 To generate the rss feed formatted file for PS4 updates, add the following command in your scheduler (crontab, etc):
 
-`psupdates --format rss --hardware ps4 --db ~/.config/psupdates.db > $WWW_DIR/PS4_updates.xml`
+`psupdates -format rss -hardware ps4 -db ~/.config/psupdates.db -output $WWW_DIR/PS4_updates.xml`
 
 [1]:docs/rss_screen.png
