@@ -218,8 +218,10 @@ func main() {
 	var hardware = flag.String("hardware", "ps5", "Hardware to get the information for. Can be \"ps4\" or \"ps5\"")
 	var dbfilepath = flag.String("db", "", "Path to the sqlite3 database to store the versions into")
 	var outputformat = flag.String("format", "text", "Output formatter. Can be \"text\" for plaintext, \"rss\" for an RSS XML")
+	var outputfile = flag.String("output", "", "Output file path")
 	var local = flag.String("local", "en-us", "Localisation of the PlayStation website to use to retrieve the updates. For best results, use an English based local: \"en-XX\"")
 	var updates psupdates
+	var output_fd = os.Stdout
 
 	flag.Parse()
 
@@ -246,11 +248,20 @@ func main() {
 		}
 	}
 
+	if *outputfile != "" {
+		fd, err := os.OpenFile(*outputfile, os.O_RDWR|os.O_CREATE, 0755)
+		if err != nil {
+			panic(fmt.Errorf("Couldn't open output file %s", *outputfile))
+		}
+		output_fd = fd
+		defer fd.Close()
+	}
+
 	switch strings.ToLower(*outputformat) {
 	case "text":
-		updates.writeAsString(os.Stdout, *hardware)
+		updates.writeAsString(output_fd, *hardware)
 	case "rss":
-		updates.writeAsRSS(os.Stdout, *hardware, *local)
+		updates.writeAsRSS(output_fd, *hardware, *local)
 	default:
 		panic(fmt.Errorf("unsupported output format %s", *outputformat))
 	}
