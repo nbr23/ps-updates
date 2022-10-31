@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -13,7 +14,6 @@ import (
 	"text/template"
 	"time"
 
-	"log"
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
@@ -75,7 +75,7 @@ func getLatestRelease(hardware string, local string) (psupdate, error) {
 	resp, err := http.Get(url)
 
 	if err != nil {
-		log.Fatal(err)
+		return update, err
 	}
 
 	defer resp.Body.Close()
@@ -222,6 +222,7 @@ func main() {
 	var local = flag.String("local", "en-us", "Localisation of the PlayStation website to use to retrieve the updates. For best results, use an English based local: \"en-XX\"")
 	var updates psupdates
 	var output_fd = os.Stdout
+	var err error
 
 	flag.Parse()
 
@@ -229,21 +230,24 @@ func main() {
 		panic("Only \"ps4\" and \"ps5\" are supported hardwares at this time")
 	}
 
-	update, err := getLatestRelease(*hardware, *local)
-	if err != nil {
-		panic(err)
+	latest_update, release_err := getLatestRelease(*hardware, *local)
+	if release_err != nil {
+		log.Printf("Unable to get latest release: %s\n", release_err)
 	}
-	updates = psupdates{update}
 
 	if len(*dbfilepath) > 0 {
-		err = writeToDB(*dbfilepath, *hardware, update)
-		if err != nil {
-			panic(err)
+		if release_err == nil {
+			updates = psupdates{latest_update}
+			err := writeToDB(*dbfilepath, *hardware, latest_update)
+			if err != nil {
+				log.Printf("Unable to save latest release to db: %s\n", err)
+			}
 		}
 
 		updates, err = readUpdatesFromDB(*dbfilepath, *hardware)
 
 		if err != nil {
+			log.Printf("Unable to read db: %s\n", err)
 			panic(err)
 		}
 	}
