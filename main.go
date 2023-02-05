@@ -34,8 +34,9 @@ func parseLatestVersion(doc goquery.Document) (string, error) {
 	doc.Find("div .accordion div .parbase.textblock div p b").Each(func(i int, s *goquery.Selection) {
 		// Assuming the first paragraph with version in the text is the latest version
 		matched, err := regexp.MatchString("[Vv]ersion", s.Text())
-		if err == nil && matched && latestversion == "" {
+		if err == nil && matched {
 			latestversion = strings.TrimSpace(s.Text())
+			return
 		}
 	})
 	if len(latestversion) == 0 {
@@ -58,6 +59,7 @@ func parsePublishDate(doc goquery.Document) (int64, string, error) {
 			if err == nil {
 				t := time.Unix(publishtimestamp, 0)
 				publishdate = t.Format(time.UnixDate)
+				return
 			}
 		}
 	})
@@ -235,9 +237,12 @@ func main() {
 		log.Printf("Unable to get latest release: %s\n", release_err)
 	}
 
+	if release_err == nil {
+		updates = psupdates{latest_update}
+	}
+
 	if len(*dbfilepath) > 0 {
 		if release_err == nil {
-			updates = psupdates{latest_update}
 			err := writeToDB(*dbfilepath, *hardware, latest_update)
 			if err != nil {
 				log.Printf("Unable to save latest release to db: %s\n", err)
@@ -255,7 +260,7 @@ func main() {
 	if *outputfile != "" {
 		fd, err := os.OpenFile(*outputfile, os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
-			panic(fmt.Errorf("Couldn't open output file %s", *outputfile))
+			panic(fmt.Errorf("couldn't open output file %s", *outputfile))
 		}
 		output_fd = fd
 		defer fd.Close()
