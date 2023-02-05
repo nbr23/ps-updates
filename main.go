@@ -34,9 +34,8 @@ func parseLatestVersion(doc goquery.Document) (string, error) {
 	doc.Find("div .accordion div .parbase.textblock div p b").Each(func(i int, s *goquery.Selection) {
 		// Assuming the first paragraph with version in the text is the latest version
 		matched, err := regexp.MatchString("[Vv]ersion", s.Text())
-		if err == nil && matched {
+		if err == nil && matched && latestversion == "" {
 			latestversion = strings.TrimSpace(s.Text())
-			return
 		}
 	})
 	if len(latestversion) == 0 {
@@ -59,7 +58,6 @@ func parsePublishDate(doc goquery.Document) (int64, string, error) {
 			if err == nil {
 				t := time.Unix(publishtimestamp, 0)
 				publishdate = t.Format(time.UnixDate)
-				return
 			}
 		}
 	})
