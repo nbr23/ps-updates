@@ -1,11 +1,11 @@
-# ps-updates
+# /!\ DEPRECATED, USE [ATOMIC-BANQUET](https://github.com/nbr23/atomic-banquet/) INSTEAD
 
 Simple tool to monitor PS4/PS5 updates release, and generate an RSS feed of update releases.
 
 Add the following feeds to your RSS Reader to be informed of the latest PS4 and PS5 update releases:
 
-- [PS5 Updates RSS](https://ps.wip.tf/PS5.xml)
-- [PS4 Updates RSS](https://ps.wip.tf/PS4.xml)
+- [PS5 Updates RSS](https://banquet.wip.tf/PS5Updates.atom)
+- [PS4 Updates RSS](https://banquet.wip.tf/PS4Updates.atom)
 
 ![RSS Feed][1]
 
